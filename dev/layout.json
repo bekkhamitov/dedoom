@@ -1,0 +1,66 @@
+{
+  "feed": [
+    {
+      "kind": "video",
+      "pk": "3400000000000000000",
+      "user": "founder.clips",
+      "caption": "Seed round advice nobody gives you #startups"
+    },
+    {
+      "kind": "photo",
+      "img": "/dev/media/thumb2.svg",
+      "user": "dailykitchen",
+      "caption": "Sunday pasta, no video here"
+    },
+    {
+      "kind": "video",
+      "pk": "3400000000000000002",
+      "user": "gymbro_mike",
+      "caption": "Form check please"
+    },
+    {
+      "kind": "video",
+      "pk": "3400000000000000005",
+      "user": "techmemes",
+      "caption": "Carousel: slide 2 is a video"
+    },
+    {
+      "kind": "video",
+      "pk": "3400000000000000003",
+      "user": "dailykitchen",
+      "caption": "3-ingredient pasta you need to try"
+    },
+    {
+      "kind": "video",
+      "pk": "3400000000000000004",
+      "user": "nyc.tips",
+      "caption": "Things I wish I knew before moving to NYC"
+    }
+  ],
+  "grid": [
+    {
+      "code": "C06xReelAbc",
+      "img": "/dev/media/thumb6.svg"
+    },
+    {
+      "code": "C07xReelAbc",
+      "img": "/dev/media/thumb7.svg"
+    },
+    {
+      "code": "C08xReelAbc",
+      "img": "/dev/media/thumb0.svg"
+    },
+    {
+      "code": "C09xReelAbc",
+      "img": "/dev/media/thumb1.svg"
+    },
+    {
+      "code": "C10xReelAbc",
+      "img": "/dev/media/thumb2.svg"
+    },
+    {
+      "code": "PhotoGrid01",
+      "img": "/dev/media/thumb4.svg"
+    }
+  ]
+}

@@ -1,0 +1,111 @@
+<!doctype html>
+<!-- Mock Instagram for testing Dedoom without Instagram: a feed with videos,
+     a photo and a carousel, then an Explore-style grid. Loads the real
+     extension scripts with a small chrome.* stub. Fake data comes from
+     dev/make-fixtures.mjs. Add ?backend=8788 to use a backend on another port. -->
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mock Instagram</title>
+  <style>
+    body { margin: 0; font: 14px -apple-system, sans-serif; background: #000; color: #f5f5f5; }
+    main { width: 470px; margin: 0 auto; padding: 20px 0 80px; }
+    article { margin-bottom: 28px; border-bottom: 1px solid #262626; padding-bottom: 14px; }
+    article header { padding: 8px 0; font-weight: 600; }
+    .media { width: 470px; height: 588px; background: #111; }
+    .media > div { width: 100%; height: 100%; }
+    .media video, .media img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    article footer { padding-top: 8px; color: #a8a8a8; }
+    h2 { font-size: 16px; margin: 30px 0 10px; }
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+    .grid a { display: block; position: relative; aspect-ratio: 3 / 4; overflow: hidden; }
+    .grid img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  </style>
+  <script>
+    // chrome.runtime stub: routes sendMessage to background.js's listener in this page.
+    const listeners = [];
+    window.chrome = {
+      runtime: {
+        lastError: undefined,
+        onMessage: { addListener: (fn) => listeners.push(fn) },
+        sendMessage(msg, cb) {
+          for (const fn of listeners) if (fn(msg, {}, (res) => cb && cb(res))) return;
+        },
+      },
+    };
+    // Fake network, installed before inject.js captures window.fetch:
+    //  - ?backend=PORT reroutes backend calls
+    //  - Instagram's comments endpoints get canned threads
+    const backendPort = new URLSearchParams(location.search).get('backend');
+    const realFetch = window.fetch;
+    window.fetch = (url, ...rest) => {
+      const u = typeof url === 'string' ? url : url.url;
+      const m = /\/api\/v1\/media\/(\d+)\/comments\/(?:(\d+)\/child_comments\/)?/.exec(u);
+      if (m) {
+        const now = Date.now() / 1000;
+        const body = m[2]
+          ? { child_comments: [{ pk: 'r1', text: 'Agreed, this saved me a week', user: { username: 'reply_guy', profile_pic_url: '/dev/media/avatar2.svg' }, comment_like_count: 3, created_at: now - 3600 }], has_more_head_child_comments: false }
+          : { comments: [
+                { pk: '901', text: 'This is the **best** advice on here', user: { username: 'ana.builds', profile_pic_url: '/dev/media/avatar1.svg' }, comment_like_count: 1200, child_comment_count: 2, created_at: now - 7200 },
+                { pk: '902', text: 'Saving this', user: { username: 'devon', profile_pic_url: '/dev/media/missing.jpg' }, comment_like_count: 4, child_comment_count: 0, created_at: now - 86400 * 2 },
+              ], has_more_comments: false };
+        return new Promise((r) => setTimeout(() => r(new Response(JSON.stringify(body), { headers: { 'Content-Type': 'application/json' } })), 300));
+      }
+      if (backendPort && typeof url === 'string') url = url.replace('localhost:8787', 'localhost:' + backendPort);
+      return realFetch(url, ...rest);
+    };
+  </script>
+  <script src="/extension/background.js"></script>
+  <script src="/extension/inject.js"></script>
+  <script src="/extension/content.js"></script>
+  <script>
+    // First-load data embedded in the HTML, like Instagram's <script type="application/json"> tags.
+    const x = new XMLHttpRequest();
+    x.open('GET', '/dev/embedded.json', false);
+    x.send();
+    document.write('<script type="application/json" data-sjs>' + x.responseText.replace(/</g, '\\u003c') + '<\/script>');
+  </script>
+</head>
+<body>
+  <main id="app"></main>
+  <script>
+    (async () => {
+      const layout = await (await fetch('/dev/layout.json')).json();
+      const app = document.getElementById('app');
+      for (const item of layout.feed) {
+        const a = document.createElement('article');
+        a.innerHTML = `<header>${item.user}</header><div class="media"><div><div></div></div></div><footer>♥ Like · Comment · Share<br>${item.caption}</footer>`;
+        const slot = a.querySelector('.media > div > div');
+        slot.style.cssText = 'width:100%;height:100%';
+        if (item.kind === 'photo') {
+          slot.innerHTML = `<img src="${item.img}" alt="">`;
+        } else {
+          const v = document.createElement('video');
+          v.muted = true;
+          v.loop = true;
+          // What React leaves on Instagram's <video>: a fiber whose parent has the player props.
+          v.__reactFiber$mock = { memoizedProps: {}, return: { memoizedProps: { coreVideoPlayerMetaData: { videoFBID: item.pk } }, return: null } };
+          slot.append(v);
+        }
+        app.append(a);
+      }
+      const h = document.createElement('h2');
+      h.textContent = 'Explore';
+      const grid = document.createElement('div');
+      grid.className = 'grid';
+      for (const t of layout.grid) {
+        const a = document.createElement('a');
+        a.href = `/reel/${t.code}/`;
+        a.onclick = (e) => e.preventDefault();
+        a.innerHTML = `<img src="${t.img}" alt="">`;
+        grid.append(a);
+      }
+      app.append(h, grid);
+      // Instagram loads more data after the page renders: Explore grid (fetch), a carousel (prefixed NDJSON).
+      await (await fetch('/dev/graphql/page1.json', { cache: 'no-store' })).text();
+      await (await fetch('/dev/graphql/page2.json', { cache: 'no-store' })).text();
+    })();
+  </script>
+</body>
+</html>

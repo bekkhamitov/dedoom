@@ -1,0 +1,18 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "backend-mock",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["backend/server.js"],
+      "env": { "TRANSCRIBE_PROVIDER": "mock", "CACHE_FILE": "dev/.cache-test.json" },
+      "port": 8787
+    },
+    {
+      "name": "harness",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8000", "--bind", "127.0.0.1"],
+      "port": 8000
+    }
+  ]
+}

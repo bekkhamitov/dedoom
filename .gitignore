@@ -1,0 +1,5 @@
+backend/.env
+backend/data/
+dev/.cache-test.json
+node_modules/
+.DS_Store
